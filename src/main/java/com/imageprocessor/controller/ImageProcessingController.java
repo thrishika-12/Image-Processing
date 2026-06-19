@@ -1,6 +1,7 @@
 package com.imageprocessor.controller;
 
 import com.imageprocessor.service.BrightnessService;
+import com.imageprocessor.service.ContrastService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -15,9 +16,14 @@ public class ImageProcessingController {
 
     private final BrightnessService brightnessService;
 
+    private final ContrastService contrastService;
+
     public ImageProcessingController(
-            BrightnessService brightnessService) {
+            BrightnessService brightnessService,
+            ContrastService contrastService) {
+
         this.brightnessService = brightnessService;
+        this.contrastService = contrastService;
     }
 
     @PostMapping("/brightness")
@@ -29,6 +35,22 @@ public class ImageProcessingController {
                 brightnessService.adjustBrightness(
                         image,
                         brightness);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
+    }
+
+    @PostMapping("/contrast")
+    public ResponseEntity<byte[]> adjustContrast(
+            @RequestParam MultipartFile image,
+            @RequestParam double contrastFactor)
+            throws Exception {
+
+        byte[] processedImage =
+                contrastService.adjustContrast(
+                        image,
+                        contrastFactor);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
