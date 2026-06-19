@@ -1,7 +1,9 @@
 package com.imageprocessor.controller;
 
+import com.imageprocessor.service.BlurService;
 import com.imageprocessor.service.BrightnessService;
 import com.imageprocessor.service.ContrastService;
+import com.imageprocessor.service.SharpenService;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,12 +20,18 @@ public class ImageProcessingController {
 
     private final ContrastService contrastService;
 
+    private final BlurService blurService;
+
+    private final SharpenService sharpenService;
+
     public ImageProcessingController(
             BrightnessService brightnessService,
-            ContrastService contrastService) {
+            ContrastService contrastService, BlurService blurService, SharpenService sharpenService) {
 
         this.brightnessService = brightnessService;
         this.contrastService = contrastService;
+        this.blurService = blurService;
+        this.sharpenService = sharpenService;
     }
 
     @PostMapping("/brightness")
@@ -51,6 +59,38 @@ public class ImageProcessingController {
                 contrastService.adjustContrast(
                         image,
                         contrastFactor);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
+    }
+
+    @PostMapping("/blur")
+    public ResponseEntity<byte[]> blurImage(
+            @RequestParam MultipartFile image,
+            @RequestParam int intensity)
+            throws Exception {
+
+        byte[] processedImage =
+                blurService.blurImage(
+                        image,
+                        intensity);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
+    }
+
+    @PostMapping("/sharpen")
+    public ResponseEntity<byte[]> sharpenImage(
+            @RequestParam MultipartFile image,
+            @RequestParam int intensity)
+            throws Exception {
+
+        byte[] processedImage =
+                sharpenService.sharpenImage(
+                        image,
+                        intensity);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
