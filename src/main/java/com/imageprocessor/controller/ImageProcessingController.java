@@ -1,9 +1,6 @@
 package com.imageprocessor.controller;
 
-import com.imageprocessor.service.BlurService;
-import com.imageprocessor.service.BrightnessService;
-import com.imageprocessor.service.ContrastService;
-import com.imageprocessor.service.SharpenService;
+import com.imageprocessor.service.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -24,14 +21,23 @@ public class ImageProcessingController {
 
     private final SharpenService sharpenService;
 
+    private final RotationService rotationService;
+
+    private final FlipService flipService;
+
     public ImageProcessingController(
             BrightnessService brightnessService,
-            ContrastService contrastService, BlurService blurService, SharpenService sharpenService) {
+            ContrastService contrastService,
+            BlurService blurService,
+            SharpenService sharpenService,
+            RotationService rotationService, FlipService flipService) {
 
         this.brightnessService = brightnessService;
         this.contrastService = contrastService;
         this.blurService = blurService;
         this.sharpenService = sharpenService;
+        this.rotationService = rotationService;
+        this.flipService = flipService;
     }
 
     @PostMapping("/brightness")
@@ -95,5 +101,35 @@ public class ImageProcessingController {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .body(processedImage);
+    }
+
+    @PostMapping("/rotate")
+    public ResponseEntity<byte[]> rotateImage(
+            @RequestParam MultipartFile image,
+            @RequestParam double angle,
+            @RequestParam String direction)
+            throws Exception {
+
+        byte[] processedImage =
+                rotationService.rotateImage(
+                        image,
+                        angle,
+                        direction);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
+    }
+
+    @PostMapping("/flip")
+    public ResponseEntity<byte[]> flipImage(
+            @RequestParam("image") MultipartFile image,
+            @RequestParam("flipType") String flipType) throws Exception {
+
+        byte[] result = flipService.flipImage(image, flipType);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(result);
     }
 }
