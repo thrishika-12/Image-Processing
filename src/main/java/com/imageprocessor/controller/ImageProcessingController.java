@@ -1,5 +1,6 @@
 package com.imageprocessor.controller;
 
+import com.imageprocessor.dtos.ImageShapeResponse;
 import com.imageprocessor.service.*;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -25,12 +26,18 @@ public class ImageProcessingController {
 
     private final FlipService flipService;
 
+    private final GrayscaleService grayscaleService;
+
+    private final BackgroundRemovalService backgroundRemovalService;
+
+    private final ShapeDetectionService shapeDetectionService;
+
     public ImageProcessingController(
             BrightnessService brightnessService,
             ContrastService contrastService,
             BlurService blurService,
             SharpenService sharpenService,
-            RotationService rotationService, FlipService flipService) {
+            RotationService rotationService, FlipService flipService, GrayscaleService grayscaleService, BackgroundRemovalService backgroundRemovalService, ShapeDetectionService shapeDetectionService) {
 
         this.brightnessService = brightnessService;
         this.contrastService = contrastService;
@@ -38,6 +45,9 @@ public class ImageProcessingController {
         this.sharpenService = sharpenService;
         this.rotationService = rotationService;
         this.flipService = flipService;
+        this.grayscaleService = grayscaleService;
+        this.backgroundRemovalService = backgroundRemovalService;
+        this.shapeDetectionService = shapeDetectionService;
     }
 
     @PostMapping("/brightness")
@@ -114,7 +124,7 @@ public class ImageProcessingController {
                 rotationService.rotateImage(
                         image,
                         angle,
-                        direction);
+                          direction);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
@@ -131,5 +141,44 @@ public class ImageProcessingController {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_JPEG)
                 .body(result);
+    }
+
+    @PostMapping("/remove-background")
+    public ResponseEntity<byte[]> removeBackground(
+            @RequestParam MultipartFile image,
+            @RequestParam(defaultValue = "80") int threshold)
+            throws Exception {
+
+        byte[] processedImage =
+                backgroundRemovalService.removeBackground(
+                        image,
+                        threshold);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
+    }
+
+    @PostMapping("/grayscale")
+    public ResponseEntity<byte[]> convertToGrayscale(
+            @RequestParam MultipartFile image)
+            throws Exception {
+
+        byte[] processedImage =
+                grayscaleService.convertToGrayscale(image);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
+    }
+
+    @PostMapping("/detect-shape")
+    public ResponseEntity<ImageShapeResponse> detectShape(
+            @RequestParam MultipartFile image)
+            throws Exception {
+
+        return ResponseEntity.ok(
+                shapeDetectionService.detectShape(
+                        image));
     }
 }
