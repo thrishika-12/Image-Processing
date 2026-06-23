@@ -32,12 +32,16 @@ public class ImageProcessingController {
 
     private final ShapeDetectionService shapeDetectionService;
 
+    private final ZoomService zoomService;
+
+    private final ZoomOutService zoomOutService;
+
     public ImageProcessingController(
             BrightnessService brightnessService,
             ContrastService contrastService,
             BlurService blurService,
             SharpenService sharpenService,
-            RotationService rotationService, FlipService flipService, GrayscaleService grayscaleService, BackgroundRemovalService backgroundRemovalService, ShapeDetectionService shapeDetectionService) {
+            RotationService rotationService, FlipService flipService, GrayscaleService grayscaleService, BackgroundRemovalService backgroundRemovalService, ShapeDetectionService shapeDetectionService, ZoomService zoomService, ZoomOutService zoomOutService) {
 
         this.brightnessService = brightnessService;
         this.contrastService = contrastService;
@@ -48,6 +52,8 @@ public class ImageProcessingController {
         this.grayscaleService = grayscaleService;
         this.backgroundRemovalService = backgroundRemovalService;
         this.shapeDetectionService = shapeDetectionService;
+        this.zoomService = zoomService;
+        this.zoomOutService = zoomOutService;
     }
 
     @PostMapping("/brightness")
@@ -180,5 +186,37 @@ public class ImageProcessingController {
         return ResponseEntity.ok(
                 shapeDetectionService.detectShape(
                         image));
+    }
+
+    @PostMapping("/zoom")
+    public ResponseEntity<byte[]> zoomImage(
+            @RequestParam MultipartFile image,
+            @RequestParam double zoomFactor)
+            throws Exception {
+
+        byte[] processedImage =
+                zoomService.zoomImage(
+                        image,
+                        zoomFactor);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
+    }
+
+    @PostMapping("/zoom-out")
+    public ResponseEntity<byte[]> zoomOutImage(
+            @RequestParam MultipartFile image,
+            @RequestParam double zoomFactor)
+            throws Exception {
+
+        byte[] processedImage =
+                zoomOutService.zoomOutImage(
+                        image,
+                        zoomFactor);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(processedImage);
     }
 }
