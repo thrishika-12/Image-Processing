@@ -36,12 +36,14 @@ public class ImageProcessingController {
 
     private final ZoomOutService zoomOutService;
 
+    private final ImageLayerService imageLayerService;
+
     public ImageProcessingController(
             BrightnessService brightnessService,
             ContrastService contrastService,
             BlurService blurService,
             SharpenService sharpenService,
-            RotationService rotationService, FlipService flipService, GrayscaleService grayscaleService, BackgroundRemovalService backgroundRemovalService, ShapeDetectionService shapeDetectionService, ZoomService zoomService, ZoomOutService zoomOutService) {
+            RotationService rotationService, FlipService flipService, GrayscaleService grayscaleService, BackgroundRemovalService backgroundRemovalService, ShapeDetectionService shapeDetectionService, ZoomService zoomService, ZoomOutService zoomOutService, ImageLayerService imageLayerService) {
 
         this.brightnessService = brightnessService;
         this.contrastService = contrastService;
@@ -54,6 +56,7 @@ public class ImageProcessingController {
         this.shapeDetectionService = shapeDetectionService;
         this.zoomService = zoomService;
         this.zoomOutService = zoomOutService;
+        this.imageLayerService = imageLayerService;
     }
 
     @PostMapping("/brightness")
@@ -149,10 +152,12 @@ public class ImageProcessingController {
                 .body(result);
     }
 
-    @PostMapping("/remove-background")
+    @PostMapping(
+            value = "/remove-background",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<byte[]> removeBackground(
-            @RequestParam MultipartFile image,
-            @RequestParam(defaultValue = "80") int threshold)
+            @RequestParam("image") MultipartFile image,
+            @RequestParam(value = "threshold", defaultValue = "80") int threshold)
             throws Exception {
 
         byte[] processedImage =
@@ -165,27 +170,29 @@ public class ImageProcessingController {
                 .body(processedImage);
     }
 
-    @PostMapping("/grayscale")
-    public ResponseEntity<byte[]> convertToGrayscale(
-            @RequestParam MultipartFile image)
+    @PostMapping(
+            value = "/grayscale",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<byte[]> grayscale(
+            @RequestParam("image") MultipartFile image)
             throws Exception {
 
-        byte[] processedImage =
-                grayscaleService.convertToGrayscale(image);
+        byte[] result = grayscaleService.convertToGrayscale(image);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(processedImage);
+                .contentType(MediaType.IMAGE_JPEG)
+                .body(result);
     }
 
-    @PostMapping("/detect-shape")
+    @PostMapping(
+            value = "/detect-shape",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ImageShapeResponse> detectShape(
-            @RequestParam MultipartFile image)
+            @RequestParam("image") MultipartFile image)
             throws Exception {
 
         return ResponseEntity.ok(
-                shapeDetectionService.detectShape(
-                        image));
+                shapeDetectionService.detectShape(image));
     }
 
     @PostMapping("/zoom")
@@ -218,5 +225,25 @@ public class ImageProcessingController {
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_PNG)
                 .body(processedImage);
+    }
+
+    @PostMapping("/layer")
+    public ResponseEntity<byte[]> layerImages(
+            @RequestParam MultipartFile backgroundImage,
+            @RequestParam MultipartFile overlayImage,
+            @RequestParam int positionX,
+            @RequestParam int positionY)
+            throws Exception {
+
+        byte[] result =
+                imageLayerService.layerImages(
+                        backgroundImage,
+                        overlayImage,
+                        positionX,
+                        positionY);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(result);
     }
 }
