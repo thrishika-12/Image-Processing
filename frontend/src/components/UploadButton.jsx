@@ -1,4 +1,4 @@
-function UploadSection({
+function UploadButton({
   setImageFile,
   setOriginalPreview,
   setProcessedPreview
@@ -21,16 +21,19 @@ function UploadSection({
   };
 
   return (
-    <div className="upload-section">
+    <label className="upload-btn">
+
+      Upload Image
 
       <input
         type="file"
         accept="image/*"
+        hidden
         onChange={handleUpload}
       />
 
-    </div>
+    </label>
   );
 }
 
-export default UploadSection;
+export default UploadButton;
