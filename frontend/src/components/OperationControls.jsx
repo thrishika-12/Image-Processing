@@ -9,378 +9,210 @@ function OperationControls({
   setShapeResult
 }) {
 
-const [value, setValue] =
-  useState(1);
+  const [value, setValue] = useState(1);
 
-const [direction,
-  setDirection] =
-  useState("clockwise");
+  const [direction, setDirection] = useState("clockwise");
 
-const [flipType,
-  setFlipType] =
-  useState("horizontal");
+  const [flipType, setFlipType] = useState("horizontal");
 
-useEffect(() => {
+  // ✅ NEW: Layer states
+  const [backgroundImage, setBackgroundImage] = useState(null);
+  const [overlayImage, setOverlayImage] = useState(null);
+  const [positionX, setPositionX] = useState(0);
+  const [positionY, setPositionY] = useState(0);
 
-  switch (selectedOperation) {
+  useEffect(() => {
 
-    case "brightness":
-      setValue(0);
-      break;
+    switch (selectedOperation) {
 
-    case "contrast":
-      setValue(1);
-      break;
+      case "brightness":
+        setValue(0);
+        break;
 
-    case "blur":
-      setValue(1);
-      break;
+      case "contrast":
+        setValue(1);
+        break;
 
-    case "sharpen":
-      setValue(1);
-      break;
+      case "blur":
+        setValue(1);
+        break;
 
-    case "rotate":
-      setValue(90);
-      break;
+      case "sharpen":
+        setValue(1);
+        break;
 
-    case "background":
-      setValue(128);
-      break;
+      case "rotate":
+        setValue(90);
+        break;
 
-    case "zoom":
-      setValue(2);
-      break;
+      case "background":
+        setValue(128);
+        break;
 
-    case "zoomout":
-      setValue(2);
-      break;
+      case "zoom":
+      case "zoomout":
+        setValue(2);
+        break;
 
-    default:
-      break;
-  }
+      default:
+        break;
+    }
 
-}, [selectedOperation]);
+  }, [selectedOperation]);
 
-  const processImage =
-    async () => {
+  const processImage = async () => {
 
-      if (
-        !imageFile &&
-        selectedOperation !== "layer"
-      ) {
-        alert(
-          "Upload an image first"
-        );
-        return;
+    // ✅ FIXED validation
+    if (selectedOperation !== "layer" && !imageFile) {
+      alert("Upload an image first");
+      return;
+    }
+
+    try {
+
+      const formData = new FormData();
+      let response;
+
+      switch (selectedOperation) {
+
+        case "brightness":
+          formData.append("image", imageFile);
+          formData.append("brightness", value);
+
+          response = await API.post("/brightness", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "contrast":
+          formData.append("image", imageFile);
+          formData.append("contrastFactor", value);
+
+          response = await API.post("/contrast", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "blur":
+          formData.append("image", imageFile);
+          formData.append("intensity", value);
+
+          response = await API.post("/blur", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "sharpen":
+          formData.append("image", imageFile);
+          formData.append("intensity", value);
+
+          response = await API.post("/sharpen", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "rotate":
+          formData.append("image", imageFile);
+          formData.append("angle", value);
+          formData.append("direction", direction);
+
+          response = await API.post("/rotate", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "flip":
+          formData.append("image", imageFile);
+          formData.append("flipType", flipType);
+
+          response = await API.post("/flip", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "grayscale":
+          formData.append("image", imageFile);
+
+          response = await API.post("/grayscale", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "background":
+          formData.append("image", imageFile);
+          formData.append("threshold", value);
+
+          response = await API.post("/remove-background", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "zoom":
+          formData.append("image", imageFile);
+          formData.append("zoomFactor", value);
+
+          response = await API.post("/zoom", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "zoomout":
+          formData.append("image", imageFile);
+          formData.append("zoomFactor", value);
+
+          response = await API.post("/zoom-out", formData, {
+            responseType: "blob"
+          });
+          break;
+
+        case "shape":
+          formData.append("image", imageFile);
+
+          const shapeResponse = await API.post("/detect-shape", formData);
+
+          setShapeResult(shapeResponse.data);
+          setProcessedPreview(URL.createObjectURL(imageFile));
+          return;
+
+        // ✅ NEW LAYER CASE
+        case "layer":
+
+          if (!backgroundImage || !overlayImage) {
+            alert("Upload both background and overlay images");
+            return;
+          }
+
+          formData.append("backgroundImage", backgroundImage);
+          formData.append("overlayImage", overlayImage);
+          formData.append("positionX", positionX);
+          formData.append("positionY", positionY);
+
+          response = await API.post("/layer", formData, {
+            responseType: "blob"
+          });
+
+          break;
+
+        default:
+          return;
       }
 
-      try {
-
-        const formData =
-          new FormData();
-
-        let response;
-
-        switch (
-          selectedOperation
-        ) {
-
-          case "brightness":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "brightness",
-              value
-            );
-
-            response =
-              await API.post(
-                "/brightness",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "contrast":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "contrastFactor",
-              value
-            );
-
-            response =
-              await API.post(
-                "/contrast",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "blur":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "intensity",
-              value
-            );
-
-            response =
-              await API.post(
-                "/blur",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "sharpen":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "intensity",
-              value
-            );
-
-            response =
-              await API.post(
-                "/sharpen",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "rotate":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "angle",
-              value
-            );
-
-            formData.append(
-              "direction",
-              direction
-            );
-
-            response =
-              await API.post(
-                "/rotate",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "flip":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "flipType",
-              flipType
-            );
-
-            response =
-              await API.post(
-                "/flip",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "grayscale":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            response =
-              await API.post(
-                "/grayscale",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "background":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "threshold",
-              value
-            );
-
-            response =
-              await API.post(
-                "/remove-background",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "zoom":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "zoomFactor",
-              value
-            );
-
-            response =
-              await API.post(
-                "/zoom",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "zoomout":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            formData.append(
-              "zoomFactor",
-              value
-            );
-
-            response =
-              await API.post(
-                "/zoom-out",
-                formData,
-                {
-                  responseType:
-                    "blob"
-                }
-              );
-
-            break;
-
-          case "shape":
-
-            formData.append(
-              "image",
-              imageFile
-            );
-
-            const shapeResponse =
-              await API.post(
-                "/detect-shape",
-                formData
-              );
-
-            setShapeResult(
-              shapeResponse.data
-            );
-
-            setProcessedPreview(
-              URL.createObjectURL(
-                imageFile
-              )
-            );
-
-            return;
-
-          default:
-            return;
-        }
-
-        const imageUrl =
-          URL.createObjectURL(
-            response.data
-          );
-
-        setShapeResult(null);
-
-        setProcessedPreview(
-          imageUrl
-        );
-
-      } catch (error) {
-
-        console.error(error);
-
-        alert(
-          "Operation failed"
-        );
-      }
-    };
+      const imageUrl = URL.createObjectURL(response.data);
+
+      setShapeResult(null);
+      setProcessedPreview(imageUrl);
+
+    } catch (error) {
+      console.error(error);
+      alert("Operation failed");
+    }
+  };
 
   return (
     <div className="operation-controls">
 
-      {(selectedOperation ===
-        "brightness") && (
+      {/* Existing Controls */}
+      {selectedOperation === "brightness" && (
         <SliderControl
           label="Brightness"
           min={-100}
@@ -391,8 +223,7 @@ useEffect(() => {
         />
       )}
 
-      {(selectedOperation ===
-        "contrast") && (
+      {selectedOperation === "contrast" && (
         <SliderControl
           label="Contrast"
           min={1}
@@ -403,8 +234,7 @@ useEffect(() => {
         />
       )}
 
-      {(selectedOperation ===
-        "blur") && (
+      {selectedOperation === "blur" && (
         <SliderControl
           label="Blur"
           min={1}
@@ -415,8 +245,7 @@ useEffect(() => {
         />
       )}
 
-      {(selectedOperation ===
-        "sharpen") && (
+      {selectedOperation === "sharpen" && (
         <SliderControl
           label="Sharpen"
           min={1}
@@ -427,8 +256,7 @@ useEffect(() => {
         />
       )}
 
-      {(selectedOperation ===
-        "rotate") && (
+      {selectedOperation === "rotate" && (
         <>
           <SliderControl
             label="Angle"
@@ -441,45 +269,25 @@ useEffect(() => {
 
           <select
             value={direction}
-            onChange={(e) =>
-              setDirection(
-                e.target.value
-              )
-            }
+            onChange={(e) => setDirection(e.target.value)}
           >
-            <option value="clockwise">
-              Clockwise
-            </option>
-
-            <option value="anticlockwise">
-              Anti Clockwise
-            </option>
+            <option value="clockwise">Clockwise</option>
+            <option value="anticlockwise">Anti Clockwise</option>
           </select>
         </>
       )}
 
-      {(selectedOperation ===
-        "flip") && (
+      {selectedOperation === "flip" && (
         <select
           value={flipType}
-          onChange={(e) =>
-            setFlipType(
-              e.target.value
-            )
-          }
+          onChange={(e) => setFlipType(e.target.value)}
         >
-          <option value="horizontal">
-            Horizontal
-          </option>
-
-          <option value="vertical">
-            Vertical
-          </option>
+          <option value="horizontal">Horizontal</option>
+          <option value="vertical">Vertical</option>
         </select>
       )}
 
-      {(selectedOperation ===
-        "background") && (
+      {selectedOperation === "background" && (
         <SliderControl
           label="Threshold"
           min={0}
@@ -500,21 +308,54 @@ useEffect(() => {
           setValue={setValue}
         />
       )}
-     {selectedOperation === "zoomout" && (
-       <SliderControl
-         label="Zoom Factor"
-         min={2}
-         max={5}
-         step={1}
-         value={value}
-         setValue={setValue}
-       />
-     )}
 
-      <button
-        className="apply-btn"
-        onClick={processImage}
-      >
+      {selectedOperation === "zoomout" && (
+        <SliderControl
+          label="Zoom Factor"
+          min={2}
+          max={5}
+          step={1}
+          value={value}
+          setValue={setValue}
+        />
+      )}
+
+      {/* ✅ NEW LAYER UI */}
+      {selectedOperation === "layer" && (
+        <div className="layer-controls">
+
+          <p>Background Image</p>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setBackgroundImage(e.target.files[0])}
+          />
+
+          <p>Overlay Image</p>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setOverlayImage(e.target.files[0])}
+          />
+
+          <p>X Position</p>
+          <input
+            type="number"
+            value={positionX}
+            onChange={(e) => setPositionX(Number(e.target.value))}
+          />
+
+          <p>Y Position</p>
+          <input
+            type="number"
+            value={positionY}
+            onChange={(e) => setPositionY(Number(e.target.value))}
+          />
+
+        </div>
+      )}
+
+      <button className="apply-btn" onClick={processImage}>
         Apply
       </button>
 
